@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}CrossBlog{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- Временно, для проверки -->
+   <!-- ========== ЕДИНЫЙ ХЕДЕР ДЛЯ ВСЕХ СТРАНИЦ ========== -->
+    <header class="site-header">
+        <div class="header-container">
+            <span class="site-logo">CROSSBLOG</span>
+            <nav class="site-nav">
+                <ul class="nav-menu">
+                    <li><a href="{% url 'blog' %}">Блог</a></li>
+                    <li><a href="{% url 'shop' %}">Магазин</a></li>
+                    <li><a href="{% url 'cart' %}">
+                        Корзина
+                        <span class="cart-badge">{{ cart_total_items|default:0 }}</span>
+                    </a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'logout' %}">Выйти</a></li>
+                    {% else %}
+                        <li><a href="{% url 'auth' %}">Войти</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Отступ, чтобы контент не уходил под фиксированный хедер -->
+    <div class="header-spacer"></div>
+
+    {% block content %}{% endblock %}
+
+    <!-- ФУТЕР -->
+    <footer class="site-footer" id="Socials">
+        <div class="footer-container">
+            <div class="footer-block">
+                <h5 class="footer-title">CrossBlog</h5>
+                <p class="footer-year">2025</p>
+            </div>
+            <div class="footer-block">
+                <h5 class="footer-title">Поддержка</h5>
+                <span class="footer-phone">+7 919 738-81-21</span>
+            </div>
+            <div class="footer-block">
+                <h5 class="footer-title">Соц. сети</h5>
+                <div class="footer-socials">
+                    <a target="_blank" href="https://vk.com/l_andrey_nikitin_l">
+                        <img src="{% static 'img/icons/icon__vk.png' %}" alt="VK" class="social-icon">
+                    </a>
+                    <a target="_blank" href="https://t.me/stit4h">
+                        <img src="{% static 'img/icons/icon__telegram.png' %}" alt="Telegram" class="social-icon">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

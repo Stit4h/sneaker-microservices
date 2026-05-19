@@ -1,0 +1,15 @@
+{% for product in products %}
+<div class="product-card">
+    {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+    {% else %}
+        <img src="/static/images/no-image.jpg" alt="Нет фото" class="product-image">
+    {% endif %}
+    <h3>{{ product.name }}</h3>
+    <p class="brand">{{ product.brand }}</p>
+    <p class="price">{{ product.price }} ₽</p>
+    <button class="add-to-cart" data-id="{{ product.id }}">Добавить в корзину</button>
+</div>
+{% empty %}
+<p class="empty-products">Товары не найдены</p>
+{% endfor %}

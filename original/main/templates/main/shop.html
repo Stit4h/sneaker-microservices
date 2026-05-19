@@ -1,0 +1,197 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}CrossBlog - Магазин{% endblock %}
+
+{% block content %}
+    <div class="shop-header-title">
+        <h1>Наши кроссовки</h1>
+        <p>Оригинальная обувь от лучших брендов</p>
+    </div>
+
+    <div class="category-filter">
+        <button class="filter-btn" data-category="">Все</button>
+        {% for category in categories %}
+        <button class="filter-btn" data-category="{{ category.slug }}">
+            {{ category.name }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <div id="products-container" class="products-grid">
+        {% include 'main/products_partial.html' %}
+    </div>
+
+    <div class="contact-section">
+        <div class="contact-container">
+            <h2 class="contact-title">Написать нам</h2>
+            <form id="contactForm" class="contact-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="name" id="contactName" placeholder="Имя" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" id="contactEmail" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <textarea name="message" id="contactMessage" placeholder="Сообщение..." rows="4" required></textarea>
+                </div>
+                <button type="submit" class="contact-btn" id="sendBtn">Отправить в Telegram</button>
+            </form>
+            <div id="formStatus" style="margin-top: 15px; text-align: center;"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCSRFToken() {
+        return document.cookie.split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+    }
+
+    // ========== AJAX-ФИЛЬТРАЦИЯ ТОВАРОВ ==========
+    function filterProducts(categorySlug) {
+        const container = document.getElementById('products-container');
+
+        container.innerHTML = '<div style="text-align: center; padding: 50px;">⏳ Загрузка...</div>';
+
+        let url = '/filter-products/';
+        if (categorySlug) {
+            url += `?category=${categorySlug}`;
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    container.innerHTML = data.html;
+                    attachCartHandlers();
+                } else {
+                    container.innerHTML = '<p style="text-align: center;">❌ Ошибка загрузки</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                container.innerHTML = '<p style="text-align: center;">❌ Ошибка загрузки</p>';
+            });
+    }
+
+    function attachCartHandlers() {
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+            btn.removeEventListener('click', handleAddToCart);
+            btn.addEventListener('click', handleAddToCart);
+        });
+    }
+
+    function handleAddToCart(e) {
+        const btn = e.currentTarget;
+        const sneakerId = btn.dataset.id;
+        const originalText = btn.textContent;
+
+        if (!sneakerId) return;
+
+        btn.textContent = 'Добавление...';
+        btn.disabled = true;
+
+        fetch('/add-to-cart/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ sneaker_id: sneakerId, quantity: 1 })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                btn.textContent = '✅ Добавлено!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 1500);
+
+                const cartCount = document.querySelector('.cart-badge');
+                if (cartCount) {
+                    cartCount.textContent = data.cart_total_items;
+                }
+            } else {
+                btn.textContent = '❌ Ошибка';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 1500);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            btn.textContent = '❌ Ошибка';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 1500);
+        });
+    }
+
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('contactName').value;
+            const email = document.getElementById('contactEmail').value;
+            const message = document.getElementById('contactMessage').value;
+            const sendBtn = document.getElementById('sendBtn');
+            const statusDiv = document.getElementById('formStatus');
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Отправка...';
+            statusDiv.innerHTML = '<span style="color: blue;">⏳ Отправка...</span>';
+
+            fetch('/send-telegram/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ name: name, email: email, message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusDiv.innerHTML = '<span style="color: green;">✅ Сообщение отправлено!</span>';
+                    contactForm.reset();
+                } else {
+                    statusDiv.innerHTML = '<span style="color: red;">❌ Ошибка: ' + data.message + '</span>';
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = '<span style="color: red;">❌ Ошибка соединения</span>';
+            })
+            .finally(() => {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Отправить в Telegram';
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const category = this.dataset.category;
+
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                filterProducts(category);
+            });
+        });
+
+        attachCartHandlers();
+    });
+</script>
+{% endblock %}

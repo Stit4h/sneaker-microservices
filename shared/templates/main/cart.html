@@ -1,0 +1,127 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}CrossBlog - Корзина{% endblock %}
+
+{% block content %}
+<div class="cart-container">
+    <h1>Корзина</h1>
+
+    {% if cart_items %}
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Количество</th>
+                    <th>Сумма</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr id="cart-item-{{ item.id }}">
+                    <td>{{ item.sneaker_name }}</td>
+                    <td>{{ item.sneaker_price }} ₽</td>
+                    <td>
+                        <input type="number" value="{{ item.quantity }}" min="1" class="quantity-input" data-id="{{ item.id }}">
+                    </td>
+                    <td class="item-total-{{ item.id }}">{{ item.get_total_price }} ₽</td>
+                    <td>
+                        <button class="remove-btn" data-id="{{ item.id }}">Удалить</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="cart-total">
+            <strong>Итого: <span id="cart-total-price">{{ total_price }}</span> ₽</strong>
+        </div>
+        <div class="checkout-section" style="text-align: right; margin-top: 30px;">
+            <form method="post" action="/orders/checkout/" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="checkout-btn">Оформить заказ</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="empty-cart">
+            <p>Корзина пуста</p>
+            <a href="/catalog/shop/" class="btn btn-primary">Перейти в магазин</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCSRFToken() {
+        return document.cookie.split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+    }
+
+    // Обновление количества
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const itemId = this.dataset.id;
+            const quantity = this.value;
+
+            fetch(`/orders/update-cart/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ quantity: quantity })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Обновляем сумму товара
+                    document.querySelector(`.item-total-${itemId}`).textContent = data.item_total + ' ₽';
+                    // Обновляем общую сумму
+                    document.getElementById('cart-total-price').textContent = data.cart_total_price;
+                    // Обновляем счётчик в хедере
+                    const cartCount = document.querySelector('.cart-badge');
+                    if (cartCount) {
+                        cartCount.textContent = data.cart_total_items;
+                    }
+                }
+            });
+        });
+    });
+
+    // Удаление товара
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.dataset.id;
+            const row = document.getElementById(`cart-item-${itemId}`);
+
+            fetch(`/orders/remove-from-cart/${itemId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    row.remove();
+                    document.getElementById('cart-total-price').textContent = data.cart_total_price;
+
+                    const cartCount = document.querySelector('.cart-badge');
+                    if (cartCount) {
+                        cartCount.textContent = data.cart_total_items;
+                    }
+
+                    // Если корзина пуста — перезагружаем страницу
+                    if (data.cart_total_items === 0) {
+                        location.reload();
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

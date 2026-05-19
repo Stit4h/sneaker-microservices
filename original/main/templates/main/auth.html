@@ -1,0 +1,187 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}CROSSBLOG — Вход и регистрация{% endblock %}
+
+{% block content %}
+<style>
+    .auth-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-height: 80vh;
+        padding-top: 8rem;
+        padding-bottom: 6rem;
+        margin-bottom: 6rem;
+    }
+    .auth-container {
+        max-width: 440px;
+        width: 100%;
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+    .tabs {
+        display: flex;
+        gap: 2rem;
+        padding: 1.5rem 2rem 0;
+        border-bottom: 1px solid #eef2f6;
+    }
+    .tab {
+        font-size: 1rem;
+        font-weight: 600;
+        padding-bottom: 0.75rem;
+        cursor: pointer;
+        color: #8e9eae;
+        transition: 0.2s;
+        border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+        color: #000;
+        border-bottom-color: #000;
+    }
+    .form-section {
+        padding: 1.75rem 2rem 2rem;
+    }
+    .form-card {
+        display: block;
+    }
+    .form-card.hidden {
+        display: none;
+    }
+    .input-group {
+        margin-bottom: 1.25rem;
+    }
+    .input-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #1e2a3a;
+        margin-bottom: 0.35rem;
+    }
+    .input-group input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        font-size: 0.95rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+        transition: 0.2s;
+        font-family: inherit;
+        outline: none;
+        box-sizing: border-box;
+    }
+    .input-group input:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    }
+    .btn-black {
+        width: 100%;
+        background: #000;
+        color: #fff;
+        border: none;
+        padding: 0.85rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: 40px;
+        cursor: pointer;
+        transition: 0.2s;
+        margin-top: 0.5rem;
+        font-family: inherit;
+    }
+    .btn-black:hover {
+        background: #1a1a1a;
+        transform: translateY(-1px);
+    }
+    .error-msg {
+        color: #e03a3a;
+        font-size: 0.75rem;
+        margin-top: 0.75rem;
+        text-align: center;
+    }
+</style>
+
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="tabs">
+            <div class="tab active" data-form="login">Вход</div>
+            <div class="tab" data-form="register">Регистрация</div>
+        </div>
+
+        <div class="form-section">
+            <div id="loginFormCard" class="form-card">
+                <form method="post" action="{% url 'auth' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="login">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" name="email" placeholder="hello@crossblog.ru" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Пароль</label>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-black">Войти</button>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="error-msg">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </form>
+            </div>
+
+            <div id="registerFormCard" class="form-card hidden">
+                <form method="post" action="{% url 'auth' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="register">
+                    <div class="input-group">
+                        <label>Имя</label>
+                        <input type="text" name="first_name" placeholder="Андрей" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Фамилия</label>
+                        <input type="text" name="last_name" placeholder="Никитин" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Никнейм</label>
+                        <input type="text" name="username" placeholder="crossblogger" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" name="email" placeholder="hello@crossblog.ru" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Пароль</label>
+                        <input type="password" name="password" placeholder="Минимум 8 символов" required>
+                    </div>
+                    <button type="submit" class="btn-black">Зарегистрироваться</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const loginTab = document.querySelector('.tab[data-form="login"]');
+    const registerTab = document.querySelector('.tab[data-form="register"]');
+    const loginCard = document.getElementById('loginFormCard');
+    const registerCard = document.getElementById('registerFormCard');
+
+    if (loginTab && registerTab) {
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+            loginCard.classList.remove('hidden');
+            registerCard.classList.add('hidden');
+        });
+
+        registerTab.addEventListener('click', () => {
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+            registerCard.classList.remove('hidden');
+            loginCard.classList.add('hidden');
+        });
+    }
+</script>
+{% endblock %}
