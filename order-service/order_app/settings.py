@@ -57,7 +57,7 @@ ROOT_URLCONF = 'order_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/app/templates'],
+        'DIRS': ['/app/shared/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
