@@ -17,4 +17,4 @@ RUN cd /app/catalog-service && python manage.py collectstatic --noinput
 
 EXPOSE 80
 
-CMD ["gunicorn", "--bind", "0.0.0.0:80", "catalog_app.wsgi:application"]
+CMD ["sh", "-c", "cd /app/catalog-service && gunicorn --bind 0.0.0.0:80 catalog_app.wsgi:application"]
